@@ -41,7 +41,7 @@ def rotate(phi):
 
     #------------------------------------------------------------------#
     # TODO: Implement transformation matrix for rotation.
-    T = np.array([[1,0],[0,1]]) # dummy matrix, to be replaced.
+    T = np.array([[np.cos(phi),-np.sin(phi)],[np.sin(phi),np.cos(phi)]]) # dummy matrix, to be replaced.
     #------------------------------------------------------------------#
     return T
 
@@ -56,7 +56,7 @@ def shear(cx, cy):
 
     #------------------------------------------------------------------#
     # TODO: Implement transformation matrix for shear.
-    T = np.array([[1,0],[0,1]]) # dummy matrix, to be replaced.
+    T = np.array([[1,cx],[cy,1]]) # dummy matrix, to be replaced.
     #------------------------------------------------------------------#
 
     return T
@@ -77,7 +77,7 @@ def reflect(rx, ry):
 
     #------------------------------------------------------------------#
     # TODO: Implement transformation matrix for reflection
-    T = np.array([[1,0],[0,1]]) # dummy matrix, to be replaced.
+    T = np.array([[rx,0],[0,ry]]) # dummy matrix, to be replaced.
     #------------------------------------------------------------------#
 
     return T
@@ -86,7 +86,7 @@ def reflect(rx, ry):
 # SECTION 2. Image transformation and least squares fitting
 
 
-def image_transform(I, Th,  output_shape=None):
+def image_transform(I, Th, output_shape=None):
     # Image transformation by inverse mapping.
     # Input:
     # I - image to be transformed
@@ -118,9 +118,11 @@ def image_transform(I, Th,  output_shape=None):
     #------------------------------------------------------------------#
     # TODO: Perform inverse coordinates mapping.
     #------------------------------------------------------------------#
-
+    # Xt is a 3-by-p matrix of the remapped coordinates in homogeneous form
+    # Xt = (Th)^(-1) * Xh
+    Xt = np.linalg.inv(Th).dot(Xh)
     It = ndimage.map_coordinates(I, [Xt[1,:], Xt[0,:]], order=1, mode='constant').reshape(output_shape)
-
+    Xt = Xt[:2,:]
     return It, Xt
 
 
@@ -138,6 +140,10 @@ def ls_solve(A, b):
     #------------------------------------------------------------------#
 
     # compute the error
+    m, n = A.shape
+    assert m >= n, "The system of equations is underdetermined. Least-squares solution is not applicable."
+    # w = (A^T A)^(-1) A^T b
+    w = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(b)
     E = np.transpose(A.dot(w) - b).dot(A.dot(w) - b)
 
     return w, E
@@ -157,11 +163,17 @@ def ls_affine(X, Xm):
     # TODO: Implement least-squares fitting of an affine transformation.
     # Use the ls_solve() function that you have previously implemented.
     #------------------------------------------------------------------#
-
+    # Add a col of ones to the transposed Xm matrix
+    A = np.concatenate((A, np.ones((A.shape[0], 1))), axis=1)
+    w123, E123 = ls_solve(A, X[0,:])
+    w456, E456 = ls_solve(A, X[1,:])
+    
+    T = np.array([[w123[0], w123[1], w123[2]],[w456[0], w456[1], w456[2]],[0, 0, 1]])
+    
     return T
 
 
-# SECTION 3. Image simmilarity metrics
+# SECTION 3. Image similarity metrics
 
 
 def correlation(I, J):
@@ -187,6 +199,7 @@ def correlation(I, J):
     # This can be done with a single line of code, but you can use for-loops instead.
     #------------------------------------------------------------------#
 
+    CC = ((u.T @ v) / (np.sqrt(u.T @ u) * np.sqrt(v.T @ v))).item()
     return CC
 
 
@@ -195,7 +208,7 @@ def joint_histogram(I, J, num_bins=16, minmax_range=None):
     # Input:
     # I, J - input images
     # num_bins: number of bins of the joint histogram (default: 16)
-    # range - range of the values of the signals (defaul: min and max
+    # range - range of the values of the signals (default: min and max
     # of the inputs)
     # Output:
     # p - joint histogram
@@ -237,13 +250,15 @@ def joint_histogram(I, J, num_bins=16, minmax_range=None):
     # (p.m.f.).
     #------------------------------------------------------------------#
 
+    # Normalize the joint histogram to get the joint probability mass function
+    p = p / np.sum(p)
     return p
 
 
 def mutual_information(p):
     # Compute the mutual information from a joint histogram.
     # Input:
-    # p - joint histogram
+    # p - joint histogram: np.array of size (num_bins, num_bins)
     # Output:
     # MI - mutual information in nat units
     # a very small positive number
@@ -255,10 +270,10 @@ def mutual_information(p):
     p += EPSILON
 
     # we can compute the marginal histograms from the joint histogram
-    p_I = np.sum(p, axis=1)
-    p_I = p_I.reshape(-1, 1)
-    p_J = np.sum(p, axis=0)
-    p_J = p_J.reshape(1, -1)
+    p_I = np.sum(p, axis=1)  # sum over columns to get the marginal histogram for I
+    p_I = p_I.reshape(-1, 1) # reshape to make it a column vector
+    p_J = np.sum(p, axis=0)  # sum over rows to get the marginal histogram for J
+    p_J = p_J.reshape(1, -1) # reshape to make it a row vector
 
     #------------------------------------------------------------------#
     # TODO: Implement the computation of the mutual information from p,
@@ -268,6 +283,8 @@ def mutual_information(p):
     # product is a matrix. You can also use the sum() function here.
     #------------------------------------------------------------------#
 
+    # Compute the mutual information using the formula: MI = sum(p * log(p / (p_I * p_J)))
+    MI = np.sum(p * np.log(p / (p_I * p_J)))
     return MI
 
 
@@ -297,6 +314,11 @@ def mutual_information_e(p):
     # computation of entropy.
     #------------------------------------------------------------------#
 
+    # Compute the entropy of I, J and the joint entropy of I and J
+    H_I = -np.sum(p_I * np.log(p_I))    
+    H_J = -np.sum(p_J * np.log(p_J))
+    H_IJ = -np.sum(p * np.log(p))
+    MI = H_I + H_J - H_IJ
     return MI
 
 
@@ -319,6 +341,9 @@ def ngradient(fun, x, h=1e-3):
     # the function at x with numerical differentiation.
     # g[k] should store the partial derivative w.r.t. the k-th parameter
     #------------------------------------------------------------------#
+
+    # Compute numerical derivative using symm. difference quotient
+    g = (fun(x + 0.5*h) - fun(x - 0.5*h)) / h
 
     return g
 
@@ -368,7 +393,7 @@ def rigid_corr(I, Im, x, return_transform=True):
 
 
 def affine_corr(I, Im, x, return_transform=True):
-    # Computes normalized cross-corrleation between a fixed and
+    # Computes normalized cross-correlation between a fixed and
     # a moving image transformed with an affine transformation.
     # Input:
     # I - fixed image
@@ -390,7 +415,13 @@ def affine_corr(I, Im, x, return_transform=True):
     #------------------------------------------------------------------#
     # TODO: Implement the missing functionality
     #------------------------------------------------------------------#
+    
+    # transform the moving image
+    Th = util.affine2h(x[0], x[1], x[2], x[3], x[4], x[5]*SCALING, x[6]*SCALING)
+    Im_t = image_transform(Im, Th)
 
+    # compute the similarity between the fixed and transformed moving image
+    C = correlation(I, Im_t)
     if return_transform:
         return C, Im_t, Th
     else:
@@ -421,6 +452,12 @@ def affine_mi(I, Im, x, return_transform=True):
     # TODO: Implement the missing functionality
     #------------------------------------------------------------------#
 
+    # transform the moving image
+    Th = util.affine2h(rotate(x[0]), scale(x[1]), scale(x[2]), shear(x[3]), shear(x[4]), x[5]*SCALING, x[6]*SCALING)
+    Im_t,_ = image_transform(Im, Th)
+
+    # compute the similarity between the fixed and transformed moving image
+    C = mutual_information(I, Im_t)
     if return_transform:
         return C, Im_t, Th
     else:

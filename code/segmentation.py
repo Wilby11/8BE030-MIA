@@ -10,7 +10,13 @@ from sklearn.neighbors import KNeighborsClassifier
 # SECTION 1. Segmentation in feature space
 
 
-def generate_gaussian_data(N=100, mu1=[0,0], mu2=[2,0], sigma1=[[1,0],[0,1]], sigma2=[[1,0],[0,1]]):
+def generate_gaussian_data(N=100, 
+                           mu1=[0,0], sigma1=[[1,0],[0,1]],
+                           mu2=[3,0], sigma2=[[1,0],[0,1]]):
+                        #    mu1=[0,0,0,0],   sigma1=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],
+                        #    mu2=[2,0,0,0],   sigma2=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],
+                        #    mu3=[-1,1,-1,1], sigma3=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],
+                        #    mu4=[1,-1,1,-1], sigma4=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]):
     # Generates a 2D toy dataset with 2 classes, N samples per class. 
     # Class 1 is Gaussian distributed with mu1 and sigma2
     # Class 2 is Gaussian distributed with mu2 and sigma2.
@@ -67,7 +73,8 @@ def extract_coordinate_feature(im):
     # that combines the information from x_coord and y_coord 
 
     #------------------------------------------------------------------#
-    
+
+    coord_im = np.sqrt((x_coord - x_center)**2 + (y_coord - x_center)**2)
     # Create a feature from the coordinate image
     c = coord_im.flatten().T
     c = c.reshape(-1, 1)

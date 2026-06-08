@@ -28,26 +28,36 @@ def ngradient(fun, x, h=1e-3):
     # return g
 
 def scatter_data(X, Y, feature0=0, feature1=1, ax=None):
-    # scater_data displays a scatterplot of at most 1000 samples from dataset X, and gives each point
+    # scatter_data displays a scatterplot of at most 1000 samples from dataset X, and gives each point
     # a different color based on its label in Y
 
+    if ax is None:
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111)
+        ax.grid(True)
+
+    # Take random indices of the data to display (only if > 1000 samples)
     k = 1000
     if len(X) > k:
         idx = np.random.randint(len(X), size=k)
-        X = X[idx,:]
+        X = X[idx, :]
         Y = Y[idx]
 
-    class_labels, indices1, indices2 = np.unique(Y, return_index=True, return_inverse=True)
-    if ax is None:
-        fig = plt.figure(figsize=(8,8))
-        ax = fig.add_subplot(111)
-        ax.grid()
+    # Ensure labels are a 1D array
+    Y = np.ravel(Y)
+
+    # Split X into different classes based on Y, and plot them with different colors
+    class_labels, _, indices2 = np.unique(Y, return_index=True, return_inverse=True)
 
     colors = cm.rainbow(np.linspace(0, 1, len(class_labels)))
-    for i, c in zip(np.arange(len(class_labels)), colors):
-        idx2 = indices2 == class_labels[i]
-        lbl = 'X, class '+str(i)
-        ax.scatter(X[idx2,feature0], X[idx2,feature1], color=c, label=lbl)
+    for i, c in enumerate(colors):
+        idx2 = indices2 == i
+        lbl = 'class ' + str(class_labels[i])
+        ax.scatter(X[idx2, feature0], X[idx2, feature1], color=c, label=lbl, alpha=0.75)
+
+    ax.set_xlabel(f'feature {feature0}')
+    ax.set_ylabel(f'feature {feature1}')
+    ax.legend()
 
     return ax
 

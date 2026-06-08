@@ -46,34 +46,216 @@ def scatter_data_test(showFigs=True):
     return X_data, Y
 
 
+def test_new_gaussian_features(showFigs=True):
+    """
+    Test function to visualize multiple Gaussian-filtered features at different sigma values.
+    This function demonstrates how to add multiple features to the dataset and visualize them
+    using scatter_data() to compare different gaussian filter parameters.
+    """
+    I = plt.imread('../data/dataset_brains/1_1_t1.tif')
+    
+    # Load ground truth labels
+    GT = plt.imread('../data/dataset_brains/1_1_gt.tif')
+    gt_mask = GT > 0
+    Y = gt_mask.flatten()  # labels
+    
+    # Original feature: T1 intensity
+    X1 = I.flatten().T
+    X1 = X1.reshape(-1, 1)
+    
+    # Add multiple Gaussian-filtered features with different sigma values
+    I_gauss_sigma1 = ndimage.gaussian_filter(I, sigma=1)
+    X2 = I_gauss_sigma1.flatten().T
+    X2 = X2.reshape(-1, 1)
+    
+    I_gauss_sigma4 = ndimage.gaussian_filter(I, sigma=4)
+    X3 = I_gauss_sigma4.flatten().T
+    X3 = X3.reshape(-1, 1)
+    
+    I_gauss_sigma8 = ndimage.gaussian_filter(I, sigma=8)
+    X4 = I_gauss_sigma8.flatten().T
+    X4 = X4.reshape(-1, 1)
+    
+    # Concatenate all features
+    X_data = np.concatenate((X1, X2, X3, X4), axis=1)
+    
+    # Keep track of features
+    features = ('T1 intensity', 'T1 gauss σ=1', 'T1 gauss σ=4', 'T1 gauss σ=8')
+    
+    if showFigs:
+        # Visualize different feature combinations
+        # Feature 0 (T1 intensity) vs Feature 1 (Gaussian σ=1)
+        fig = plt.figure(figsize=(16, 12))
+        
+        ax1 = fig.add_subplot(2, 3, 1)
+        util.scatter_data(X_data, Y, feature0=0, feature1=1, ax=ax1)
+        ax1.set_xlabel(features[0])
+        ax1.set_ylabel(features[1])
+        ax1.set_title('T1 intensity vs Gauss σ=1')
+        
+        # Feature 0 vs Feature 2 (Gaussian σ=4)
+        ax2 = fig.add_subplot(2, 3, 2)
+        util.scatter_data(X_data, Y, feature0=0, feature1=2, ax=ax2)
+        ax2.set_xlabel(features[0])
+        ax2.set_ylabel(features[2])
+        ax2.set_title('T1 intensity vs Gauss σ=4')
+        
+        # Feature 0 vs Feature 3 (Gaussian σ=8)
+        ax3 = fig.add_subplot(2, 3, 3)
+        util.scatter_data(X_data, Y, feature0=0, feature1=3, ax=ax3)
+        ax3.set_xlabel(features[0])
+        ax3.set_ylabel(features[3])
+        ax3.set_title('T1 intensity vs Gauss σ=8')
+        
+        # Feature 1 vs Feature 2
+        ax4 = fig.add_subplot(2, 3, 4)
+        util.scatter_data(X_data, Y, feature0=1, feature1=2, ax=ax4)
+        ax4.set_xlabel(features[1])
+        ax4.set_ylabel(features[2])
+        ax4.set_title('Gauss σ=1 vs Gauss σ=4')
+        
+        # Feature 1 vs Feature 3
+        ax5 = fig.add_subplot(2, 3, 5)
+        util.scatter_data(X_data, Y, feature0=1, feature1=3, ax=ax5)
+        ax5.set_xlabel(features[1])
+        ax5.set_ylabel(features[3])
+        ax5.set_title('Gauss σ=1 vs Gauss σ=8')
+        
+        # Feature 2 vs Feature 3
+        ax6 = fig.add_subplot(2, 3, 6)
+        util.scatter_data(X_data, Y, feature0=2, feature1=3, ax=ax6)
+        ax6.set_xlabel(features[2])
+        ax6.set_ylabel(features[3])
+        ax6.set_title('Gauss σ=4 vs Gauss σ=8')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    return X_data, Y, features
+
+
 def scatter_t2_test(showFigs=True):
     I1 = plt.imread('../data/dataset_brains/1_1_t1.tif')
-    X1 = I1.flatten().T
-    X1 = X1.reshape(-1, 1)
+    Im1_X1 = I1.flatten().T.reshape(-1, 1) # Original feature: intensity
+
     I2 = plt.imread('../data/dataset_brains/1_1_t2.tif')
-    X2 = I2.flatten().T
-    X2 = X2.reshape(-1, 1)
+    Im2_X1 = I2.flatten().T.reshape(-1, 1) # Original feature: intensity
 
     GT = plt.imread('../data/dataset_brains/1_1_gt.tif')
     gt_mask = GT>0
     Y = gt_mask.flatten() # labels
-
-    I1_blurred = ndimage.gaussian_filter(I1, sigma=4)
-    X12 = I1_blurred.flatten().T
-    X12 = X12.reshape(-1, 1)
-    X_data = np.concatenate((X1, X12), axis=1)
-
-    # Keep track of features you added
-    features = ('T1 intensity', 'T1 gauss 2')
-
-    if showFigs:
-        util.scatter_data(X_data,Y,0,1)
-
+    
     #------------------------------------------------------------------#
     # TODO: Extract features from the T2 image and compare them to the T1 features
     #------------------------------------------------------------------#
+    
+    # Add multiple Gaussian-filtered features with different sigma values (T1-weighted image):
+    Im1_features = ('T1 intensity', 'T1 gauss σ=1', 'T1 gauss σ=4', 'T1 gauss σ=8')
 
-    return X_data, Y
+    I1_gauss_sigma1 = ndimage.gaussian_filter(I1, sigma=1)
+    Im1_X2 = I1_gauss_sigma1.flatten().T.reshape(-1, 1)
+
+    I1_gauss_sigma4 = ndimage.gaussian_filter(I1, sigma=4)
+    Im1_X3 = I1_gauss_sigma4.flatten().T.reshape(-1, 1)
+
+    I1_gauss_sigma8 = ndimage.gaussian_filter(I1, sigma=8)
+    Im1_X4 = I1_gauss_sigma8.flatten().T.reshape(-1, 1)
+    
+    Im1_X_data = np.concatenate((Im1_X1, Im1_X2, Im1_X3, Im1_X4), axis=1) # Concatenate all features
+
+    # Now get 3 sigma-filter features for the T2-weighted images:
+    Im2_features = ('T2 intensity', 'T2 gauss σ=1', 'T2 gauss σ=4', 'T2 gauss σ=8')
+
+    I2_gauss_sigma1 = ndimage.gaussian_filter(I2, sigma=1)
+    Im2_X2 = I2_gauss_sigma1.flatten().T.reshape(-1, 1)
+    
+    I2_gauss_sigma4 = ndimage.gaussian_filter(I2, sigma=4)
+    Im2_X3 = I2_gauss_sigma4.flatten().T.reshape(-1, 1)
+
+    I2_gauss_sigma8 = ndimage.gaussian_filter(I2, sigma=8)
+    Im2_X4 = I2_gauss_sigma8.flatten().T.reshape(-1, 1)
+    
+    Im2_X_data = np.concatenate((Im2_X1, Im2_X2, Im2_X3, Im2_X4), axis=1) # Concatenate all features
+
+
+    if showFigs:
+        # Visualize different feature combinations
+        # Feature 0 (T1 intensity) vs Feature 1 (Gaussian σ=1)
+        fig = plt.figure(figsize=(16, 12))
+        
+        ax1 = fig.add_subplot(2, 3, 1)
+        util.scatter_data(Im2_X_data, Y, feature0=0, feature1=1, ax=ax1)
+        ax1.set_xlabel(Im2_features[0])
+        ax1.set_ylabel(Im2_features[1])
+        ax1.set_title('T2 intensity vs Gauss σ=1')
+        
+        # Feature 0 vs Feature 2 (Gaussian σ=4)
+        ax2 = fig.add_subplot(2, 3, 2)
+        util.scatter_data(Im2_X_data, Y, feature0=0, feature1=2, ax=ax2)
+        ax2.set_xlabel(Im2_features[0])
+        ax2.set_ylabel(Im2_features[2])
+        ax2.set_title('T2 intensity vs Gauss σ=4')
+        
+        # Feature 0 vs Feature 3 (Gaussian σ=8)
+        ax3 = fig.add_subplot(2, 3, 3)
+        util.scatter_data(Im2_X_data, Y, feature0=0, feature1=3, ax=ax3)
+        ax3.set_xlabel(Im2_features[0])
+        ax3.set_ylabel(Im2_features[3])
+        ax3.set_title('T2 intensity vs Gauss σ=8')
+        
+        # Feature 1 vs Feature 2
+        ax4 = fig.add_subplot(2, 3, 4)
+        util.scatter_data(Im2_X_data, Y, feature0=1, feature1=2, ax=ax4)
+        ax4.set_xlabel(Im2_features[1])
+        ax4.set_ylabel(Im2_features[2])
+        ax4.set_title('Gauss σ=1 vs Gauss σ=4')
+        
+        # Feature 1 vs Feature 3
+        ax5 = fig.add_subplot(2, 3, 5)
+        util.scatter_data(Im2_X_data, Y, feature0=1, feature1=3, ax=ax5)
+        ax5.set_xlabel(Im2_features[1])
+        ax5.set_ylabel(Im2_features[3])
+        ax5.set_title('Gauss σ=1 vs Gauss σ=8')
+        
+        # Feature 2 vs Feature 3
+        ax6 = fig.add_subplot(2, 3, 6)
+        util.scatter_data(Im2_X_data, Y, feature0=2, feature1=3, ax=ax6)
+        ax6.set_xlabel(Im2_features[2])
+        ax6.set_ylabel(Im2_features[3])
+        ax6.set_title('Gauss σ=4 vs Gauss σ=8')
+        
+        plt.tight_layout()
+        plt.show()
+
+        # VISUALIZING T1 FEATURES AGAINST T2 FEATURES:
+        # Feature 0 (T1 intensity) vs Feature 1 (Gaussian σ=1)
+        fig = plt.figure(figsize=(16, 12))
+        
+        ax1 = fig.add_subplot(1, 3, 1)
+        ax1.plot(Im1_X_data[:, 0], Im2_X_data[:, 1], 'o', ax=ax1)
+        ax1.set_xlabel(Im2_features[0])
+        ax1.set_ylabel(Im2_features[1])
+        ax1.set_title('T2 intensity vs Gauss σ=1')
+        
+        # Feature 0 vs Feature 2 (Gaussian σ=4)
+        ax2 = fig.add_subplot(1, 3, 2)
+        util.scatter_data(Im2_X_data, Y, feature0=0, feature1=2, ax=ax2)
+        ax2.set_xlabel(Im2_features[0])
+        ax2.set_ylabel(Im2_features[2])
+        ax2.set_title('T2 intensity vs Gauss σ=4')
+        
+        # Feature 0 vs Feature 3 (Gaussian σ=8)
+        ax3 = fig.add_subplot(1, 3, 3)
+        util.scatter_data(Im2_X_data, Y, feature0=0, feature1=3, ax=ax3)
+        ax3.set_xlabel(Im2_features[0])
+        ax3.set_ylabel(Im2_features[3])
+        ax3.set_title('T2 intensity vs Gauss σ=8')
+
+        
+        plt.tight_layout()
+        plt.show()
+    
+    return Im2_X_data, Y, Im2_features
 
 
 def extract_coordinate_feature_test():
@@ -89,13 +271,23 @@ def extract_coordinate_feature_test():
 def feature_stats_test():
     X, Y = scatter_data_test(showFigs=False)
     I = plt.imread('../data/dataset_brains/1_1_t1.tif')
-    c, coord_im = seg.extract_coordinate_feature(I)
-    X_data = np.concatenate((X, c), axis=1)
+    
+    # c is the Euclidian distance of each pixel to the center of the image as a vector,
+    # coord_im is the same but then is an array of shape equal to the image:
+    c, coord_im = seg.extract_coordinate_feature(I) # use c because we want to add
+    X_data = np.concatenate((X, c), axis=1)         # Euclidian dist as feature vector
 
     #------------------------------------------------------------------#
     # TODO: Write code to examine the mean and standard deviation of your dataset containing variety of features
+    # DONE
     #------------------------------------------------------------------#
 
+    mean = np.mean(X_data, 0)
+    std = np.std(X_data, 0)
+    
+    print(f"Mean of the features: {mean}")
+    print(f"Std of the features: {std}")
+    return mean, std
 
 def normalized_stats_test():
     X, Y = scatter_data_test(showFigs=False)
@@ -106,26 +298,35 @@ def normalized_stats_test():
     #------------------------------------------------------------------#
     # TODO: Write code to normalize your dataset containing variety of features,
     #  then examine the mean and std dev
-    pass
     #------------------------------------------------------------------#
 
+    # normalize_data normalizes data, can also normalize test set data
+    return seg.normalize_data(X_data)
 
 def distance_test():
     #------------------------------------------------------------------#
     # TODO: Generate a Gaussian dataset, with 100 samples per class, and compute the distances.
     #  Use plt.imshow() to visualize the distance matrix as an image.
-    pass
     #------------------------------------------------------------------#
 
+    X, Y = seg.generate_gaussian_data(100,
+                                      mu1=[10,0], mu2=[7,0])
+    D = scipy.spatial.distance.cdist(X,X,metric='euclidean')
+    plt.imshow(D)
 
-def small_samples_distance_test():
+
+def small_samples_distance_test(plot=False):
     #------------------------------------------------------------------#
     # TODO: Generate a small sample Gaussian dataset X,
     #  create dataset C as per the instructions,
     #  and calculate and plot the distances between the datasets.
-    pass
     #------------------------------------------------------------------#
-
+    X, Y = seg.generate_gaussian_data(5, mu1=[0,0])
+    C = np.array([[0,0],[1,1]])
+    D = scipy.spatial.distance.cdist(X, C, metric='euclidean')
+    if plot:
+        plt.imshow(D)
+    return X, Y, C, D
 
 def minimum_distance_test(X, Y, C, D):
     #------------------------------------------------------------------#
@@ -135,6 +336,15 @@ def minimum_distance_test(X, Y, C, D):
     #  calculate how many samples are closest to each of the samples in `C`
     pass
     #------------------------------------------------------------------#
+    # Plotting X and C in one plot, with different colors
+    fig = plt.figure(figsize=(6,6))
+    plt.plot(X[:,0], X[:,1], 'o', label='X')
+    plt.plot(C[:,0], C[:,1], 's', label='C')
+    plt.legend()
+    plt.show()
+    min_index = np.argmin(D, axis=1)
+    min_dist = D[np.arange(D.shape[0]), min_index]
+    print(f"Minimum distances: {min_dist}")
 
 
 def distance_classification_test():

@@ -50,6 +50,37 @@ def combining_transforms():
     # TODO: Experiment with combining transformation matrices.
     #------------------------------------------------------------------#
 
+    X_trans1 = reg.reflect(-1, -1).dot(reg.shear(0.1, 0.2).dot(reg.rotate(3*np.pi/4).dot(X)))
+    X_trans2 = reg.reflect(-1, 1).dot(reg.shear(0.1,0.2).dot(reg.rotate(2*np.pi/3).dot(X)))
+    X_trans3 = reg.rotate(np.pi).dot(reg.reflect(-1, 1).dot(X))
+
+    fig = plt.figure(figsize=(14,5))
+    ax1 = fig.add_subplot(141)
+    ax2 = fig.add_subplot(142)
+    ax3 = fig.add_subplot(143)
+    ax4 = fig.add_subplot(144)
+
+    util.plot_object(ax1, X)
+    util.plot_object(ax2, X_trans1)
+    util.plot_object(ax3, X_trans2)
+    util.plot_object(ax4, X_trans3)
+
+    ax1.set_title('Original')
+    ax2.set_title('Rot(135°)->Shear(0.1,0.2)->Refl(-1,-1)')
+    ax3.set_title('Rot(120°)->Shear(0.1,0.2)->Refl(-1,1)')
+    ax4.set_title('Refl(-1,1)->Rot(180°)')
+
+    ax1.grid()
+    ax2.grid()
+    ax3.grid()
+    ax4.grid()
+    
+    ax1.set_aspect('equal')
+    ax2.set_aspect('equal')
+    ax3.set_aspect('equal')
+    ax4.set_aspect('equal')
+    
+    plt.tight_layout()
 
 def t2h_test():
 
@@ -81,6 +112,8 @@ def arbitrary_rotation():
     #------------------------------------------------------------------#
     # TODO: Perform rotation of the test shape around the first vertex
     #------------------------------------------------------------------#
+
+    T = np.array([np.cos(np.pi/4), -np.sin(np.pi/4), np.sin(np.pi/4), np.cos(np.pi/4)]).reshape(2,2)
 
     X_rot = T.dot(Xh)
 
@@ -139,8 +172,15 @@ def ls_solve_test():
     #------------------------------------------------------------------#
     # TODO: Test your implementation of the ls_solve definition
     #------------------------------------------------------------------#
-
-    print('Test successful!')
+    A = np.array([[3, 4], [5, 6], [7, 8], [17, 10]])
+    b = np.array([1, 2, 3, 4])
+    w, E = reg.ls_solve(A, b)
+    # round(4) is used to avoid numerical precision issues
+    if np.allclose(w.round(4), np.array([0.0694, 0.2842])):
+        print('Test successful!')
+    else:
+        print('Test failed! LO SERRRRRRRRRRRRRRRRRRRRRR')
+        print(w)
 
 
 def ls_affine_test():
@@ -198,6 +238,27 @@ def correlation_test():
     # TODO: Implement a few more tests of the correlation definition
     #------------------------------------------------------------------#
 
+    # normalized cross correlation should be symmetric
+    C2_1 = reg.correlation(I, J)
+    C2_2 = reg.correlation(J, I)
+    assert abs(C2_1 - C2_2) < 10e-10, "Correlation function not symmetric!"
+    # normalized cross correlation should be in [-1,1]
+    assert abs(C2_1) <= 1, "Correlation not in [-1,1]!"
+    # correlation is invariant to scaling of the images
+    I = I.astype(np.float64) # needed because otherwise scaling will not work for uint8 images
+    J = J.astype(np.float64)
+    C3_1 = reg.correlation(I, 3*J)
+    C3_2 = reg.correlation(I, J)    
+    assert abs(C3_1 - C3_2) < 10e-10, "Correlation function is not invariant to scaling of the images!"
+    # correlation of an image with a shifted version of itself should be close to 1
+    # Th_shift = util.t2h(reg.identity(), np.array([5,5]))
+    # J_shift, _ = reg.image_transform(I, Th_shift)
+    # I = I.astype(np.float64)
+    # J_shift = J_shift.astype(np.float64)
+    # C4 = reg.correlation(I, J_shift)
+    # print(C4)
+    # assert abs(C4 - 1) < 10e-10, "Correlation function is not invariant to translation of the images!"
+
     print('Test successful!')
 
 
@@ -212,6 +273,15 @@ def mutual_information_test():
     #------------------------------------------------------------------#
     # TODO: Implement a few tests of the mutual_information definition
     #------------------------------------------------------------------#
+
+    # MI should be non-negative
+    assert MI1 >= 0, "Mutual information should be non-negative!"
+    # MI should be symmetric
+    assert abs(MI1 - reg.mutual_information(reg.joint_histogram(I, I))) < 10e-10, "Mutual information should be symmetric!"
+    # MI should be invariant to scaling of the images
+    I = I.astype(np.float64) # needed because otherwise scaling will not work for uint8 images
+    MI2 = reg.mutual_information(reg.joint_histogram(3*I, 3*I))
+    assert abs(MI1 - MI2) < 10e-10, "Mutual information should be invariant to scaling of the images!"
 
     print('Test successful!')
 
@@ -246,6 +316,15 @@ def ngradient_test():
     # TODO: Implement a few more test cases of ngradient
     #------------------------------------------------------------------#
 
+    # Check constant function goes to approx zero
+    fun1 = lambda x: 3
+    g2 = reg.ngradient(fun1, np.ones(1,))
+    assert abs(g2 - 0) < 1e-5, "Numerical gradient does not pass test for constant function"
+
+    # Linear function should have the same result
+    fun2 = lambda x: 3*x
+    g3 = reg.ngradient(fun2, np.ones(1,))
+    assert abs(g3 - 3) < 1e-5, "Numerical gradient does not pass test for linear function"
     print('Test successful!')
 
 

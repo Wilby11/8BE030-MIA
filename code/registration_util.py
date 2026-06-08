@@ -29,8 +29,8 @@ def c2h(X):
     # Output:
     # Xh - homogeneous coordinates
 
-    n = np.ones([1,X.shape[1]])
-    Xh = np.concatenate((X,n))
+    n = np.ones([1, X.shape[1]])
+    Xh = np.concatenate((X, n))
 
     return Xh
 
@@ -43,10 +43,27 @@ def t2h(T, t):
     # Output:
     # Th - homogeneous transformation matrix
 
-    #------------------------------------------------------------------#
-    # TODO: Implement conversion of a transformation matrix and a translation vector to homogeneous transformation matrix.
-	pass
-    #------------------------------------------------------------------#
+    Th = np.eye(3)
+    Th[0:2, 0:2] = T
+    Th[0:2, 2] = t
+    return Th
+
+def affine2h(rot, sx, sy, shx, shy, tx, ty):
+	# Th = util.affine2h(rotate(x[0]), scale(x[1], x[2]), shear(x[3], x[4]), x[5:]*SCALING)
+	# Input:
+	# x - vector of 6 parameters, where the first 5 are the parameters of the affine
+	# transformation, and the last two are the translation parameters. The first parameter 
+	# is the rotation angle in radians, the second and third parameters are the scaling 
+	# factors in x and y direction, the fourth and fifth parameters are the shear factors 
+	# in x and y direction, and the last two parameters are the translation parameters in
+	# x and y direction.
+	# Output:
+	# Ah - homogeneous affine transformation matrix
+
+	Ah = np.eye(3)
+	Ah[0:2, :] = np.array([[sx*np.cos(rot), -shy+sx*np.sin(rot), tx],
+							[shx+sy*np.sin(rot), sy*np.cos(rot), ty]])
+	return Ah
 
 def plot_object(ax, X):
     # Plot 2D object.
@@ -87,7 +104,7 @@ def cpselect(imagePath1, imagePath2):
 	axes[1].set_title("Image 2")
 	
 	#accumulate points
-	points = plt.ginput(n=-1, timeout=30)
+	points = plt.ginput(n=-1, timeout=90)
 	plt.close(fig)
 	
 	#restore to inline figure placement
